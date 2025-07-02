@@ -1,0 +1,21 @@
+
+spring:
+  cache:
+    type: caffeine
+    caffeine:
+      spec: expireAfterWrite=1s,maximumSize=10
+
+logging:
+  level:
+    com.exchange: DEBUG
+    org.springframework.cache: DEBUG
+
+exchange:
+  api:
+    exchangerate-host:
+      base-url: http://localhost:8089
+
+retry:
+  external-api:
+    max-attempts: 3
+    delay: 100
