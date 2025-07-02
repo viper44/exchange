@@ -1,0 +1,317 @@
+openapi: 3.0.3
+info:
+  title: Exchange Rate API
+  description: |
+    A comprehensive API for fetching exchange rates and performing currency conversions.
+    
+    Features:
+    - Real-time exchange rates
+    - Currency conversion calculations
+    - Intelligent caching for optimal performance
+    - Support for multiple currencies
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+  - url: https://api.exchange-rates.dev
+    description: Production server
+
+paths:
+  /api/v1/exchange-rates/{from}/{to}:
+    get:
+      tags:
+        - Exchange Rates
+      summary: Get exchange rate between two currencies
+      description: Retrieves the current exchange rate from one currency to another
+      operationId: getExchangeRate
+      parameters:
+        - $ref: '#/components/parameters/FromCurrency'
+        - $ref: '#/components/parameters/ToCurrency'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExchangeRateResponse'
+        '400':
+          description: Invalid currency codes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Currency not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Service temporarily unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/exchange-rates/{from}:
+    get:
+      tags:
+        - Exchange Rates
+      summary: Get all exchange rates from a base currency
+      description: Retrieves exchange rates from a base currency to all available currencies
+      operationId: getAllExchangeRates
+      parameters:
+        - $ref: '#/components/parameters/FromCurrency'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AllExchangeRatesResponse'
+        '400':
+          description: Invalid currency code
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Currency not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/conversions/{from}/{to}:
+    get:
+      tags:
+        - Currency Conversion
+      summary: Convert amount from one currency to another
+      description: Converts a specified amount from one currency to another using current exchange rates
+      operationId: convertCurrency
+      parameters:
+        - $ref: '#/components/parameters/FromCurrency'
+        - $ref: '#/components/parameters/ToCurrency'
+        - $ref: '#/components/parameters/Amount'
+      responses:
+        '200':
+          description: Successful conversion
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversionResponse'
+        '400':
+          description: Invalid input parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/conversions/{from}:
+    post:
+      tags:
+        - Currency Conversion
+      summary: Convert amount to multiple currencies
+      description: Converts a specified amount from one currency to multiple target currencies
+      operationId: convertToMultipleCurrencies
+      parameters:
+        - $ref: '#/components/parameters/FromCurrency'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MultiConversionRequest'
+      responses:
+        '200':
+          description: Successful conversions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MultiConversionResponse'
+        '400':
+          description: Invalid input parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+
+
+components:
+  schemas:
+    ExchangeRateResponse:
+      type: object
+      properties:
+        from:
+          type: string
+          description: Source currency code
+          example: "USD"
+        to:
+          type: string
+          description: Target currency code
+          example: "EUR"
+        rate:
+          type: number
+          format: double
+          description: Exchange rate
+          example: 0.8642
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp when the rate was fetched
+
+    AllExchangeRatesResponse:
+      type: object
+      properties:
+        base:
+          type: string
+          description: Base currency code
+          example: "USD"
+        rates:
+          type: object
+          additionalProperties:
+            type: number
+            format: double
+          description: Map of currency codes to exchange rates
+          example:
+            EUR: 0.8642
+            GBP: 0.7634
+            JPY: 149.50
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp when the rates were fetched
+
+    MultiConversionRequest:
+      type: object
+      required:
+        - amount
+        - currencies
+      properties:
+        amount:
+          type: number
+          format: double
+          minimum: 0
+          description: Amount to convert
+          example: 100.50
+        currencies:
+          type: array
+          items:
+            type: string
+            pattern: "^[A-Z]{3}$"
+          description: List of target currency codes
+          example: ["EUR", "GBP", "JPY"]
+
+    ConversionResponse:
+      type: object
+      properties:
+        from:
+          type: string
+          description: Source currency code
+          example: "USD"
+        to:
+          type: string
+          description: Target currency code
+          example: "EUR"
+        originalAmount:
+          type: number
+          format: double
+          description: Original amount
+          example: 100.50
+        convertedAmount:
+          type: number
+          format: double
+          description: Converted amount
+          example: 86.85
+        exchangeRate:
+          type: number
+          format: double
+          description: Exchange rate used
+          example: 0.8642
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp of conversion
+
+    MultiConversionResponse:
+      type: object
+      properties:
+        from:
+          type: string
+          description: Source currency code
+          example: "USD"
+        originalAmount:
+          type: number
+          format: double
+          description: Original amount
+          example: 100.50
+        conversions:
+          type: array
+          items:
+            type: object
+            properties:
+              to:
+                type: string
+                example: "EUR"
+              convertedAmount:
+                type: number
+                format: double
+                example: 86.85
+              exchangeRate:
+                type: number
+                format: double
+                example: 0.8642
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp of conversion
+
+
+
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Error message
+          example: "Currency code 'XYZ' is not valid"
+
+  parameters:
+    FromCurrency:
+      name: from
+      in: path
+      required: true
+      description: Source currency code (ISO 4217)
+      schema:
+        type: string
+        pattern: "^[A-Z]{3}$"
+        example: "USD"
+        
+    ToCurrency:
+      name: to
+      in: path
+      required: true
+      description: Target currency code (ISO 4217)
+      schema:
+        type: string
+        pattern: "^[A-Z]{3}$"
+        example: "EUR"
+        
+    Amount:
+      name: amount
+      in: query
+      required: true
+      description: Amount to convert
+      schema:
+        type: number
+        format: double
+        minimum: 0
+        example: 100.50
+
+tags:
+  - name: Exchange Rates
+    description: Operations for fetching exchange rates
+  - name: Currency Conversion
+    description: Operations for converting currencies

@@ -1,0 +1,74 @@
+spring:
+  application:
+    name: exchange-rate-api
+  cache:
+    type: caffeine
+    caffeine:
+      spec: expireAfterWrite=60s,maximumSize=1000,recordStats
+  web:
+    resources:
+      add-mappings: true
+      static-locations: classpath:/static/
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    time-zone: UTC
+    default-property-inclusion: non_null
+  cloud:
+    openfeign:
+      httpclient:
+        hc5:
+          enabled: true
+          connection-request-timeout: 10
+          connection-request-timeout-unit: seconds
+      autoconfiguration:
+        jackson:
+          enabled: true
+# Server Configuration
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+# Logging Configuration
+logging:
+  level:
+    com.exchange: INFO
+    org.springframework.cache: INFO
+    org.springframework.web: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
+# External API Configuration
+client:
+  exchange-rate-host:
+    name: exchange-rate-host
+    url: https://api.exchangerate.host
+    api-key: ${EXCHANGE_API_KEY:dd0fde16efc46b747feebfb2d5e6dd8d}
+
+# Retry Configuration
+retry:
+  external-api:
+    max-attempts: 5
+    delay: 1000
+
+# Management/Actuator Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,cache
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+  simple:
+    metrics:
+      export:
+        enabled: true
